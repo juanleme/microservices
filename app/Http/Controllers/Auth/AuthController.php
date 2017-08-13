@@ -34,68 +34,17 @@ class AuthController extends Controller
         try {
             // Attempt to verify the credentials and create a token for the user
             if (!$token = JWTAuth::attempt(
-                $this->getCredentials($request)
+                $this->_getCredentials($request)
             )) {
-                return $this->onUnauthorized();
+                return $this->_onUnauthorized();
             }
         } catch (JWTException $e) {
             // Something went wrong whilst attempting to encode the token
-            return $this->onJwtGenerationError();
+            return $this->_onJwtGenerationError();
         }
 
         // All good so return the token
-        return $this->onAuthorized($token);
-    }
-
-    /**
-     * What response should be returned on invalid credentials.
-     *
-     * @return JsonResponse
-     */
-    protected function onUnauthorized()
-    {
-        return new JsonResponse([
-            'message' => 'invalid_credentials'
-        ], Response::HTTP_UNAUTHORIZED);
-    }
-
-    /**
-     * What response should be returned on error while generate JWT.
-     *
-     * @return JsonResponse
-     */
-    protected function onJwtGenerationError()
-    {
-        return new JsonResponse([
-            'message' => 'could_not_create_token'
-        ], Response::HTTP_INTERNAL_SERVER_ERROR);
-    }
-
-    /**
-     * What response should be returned on authorized.
-     *
-     * @return JsonResponse
-     */
-    protected function onAuthorized($token)
-    {
-        return new JsonResponse([
-            'message' => 'token_generated',
-            'data' => [
-                'token' => $token,
-            ]
-        ]);
-    }
-
-    /**
-     * Get the needed authorization credentials from the request.
-     *
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return array
-     */
-    protected function getCredentials(Request $request)
-    {
-        return $request->only('email', 'password');
+        return $this->_onAuthorized($token);
     }
 
     /**
@@ -124,11 +73,11 @@ class AuthController extends Controller
         $newToken = $token->refresh();
 
         return new JsonResponse([
-            'message' => 'token_refreshed',
-            'data' => [
-                'token' => $newToken
-            ]
-        ]);
+                'message' => 'token_refreshed',
+                'data' => [
+                    'token' => $newToken
+                ]
+            ]);
     }
 
     /**
@@ -139,8 +88,59 @@ class AuthController extends Controller
     public function getUser()
     {
         return new JsonResponse([
-            'message' => 'authenticated_user',
-            'data' => JWTAuth::parseToken()->authenticate()
+                'message' => 'authenticated_user',
+                'data' => JWTAuth::parseToken()->authenticate()
+            ]);
+    }
+
+    /**
+     * What response should be returned on invalid credentials.
+     *
+     * @return JsonResponse
+     */
+    protected function _onUnauthorized()
+    {
+        return new JsonResponse([
+            'message' => 'invalid_credentials'
+        ], Response::HTTP_UNAUTHORIZED);
+    }
+
+    /**
+     * What response should be returned on error while generate JWT.
+     *
+     * @return JsonResponse
+     */
+    protected function _onJwtGenerationError()
+    {
+        return new JsonResponse([
+            'message' => 'could_not_create_token'
+        ], Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * What response should be returned on authorized.
+     *
+     * @return JsonResponse
+     */
+    protected function _onAuthorized($token)
+    {
+        return new JsonResponse([
+            'message' => 'token_generated',
+            'data' => [
+                'token' => $token,
+            ]
         ]);
+    }
+
+    /**
+     * Get the needed authorization credentials from the request.
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return array
+     */
+    protected function _getCredentials(Request $request)
+    {
+        return $request->only('email', 'password');
     }
 }

@@ -12,17 +12,17 @@ class Authenticate
      *
      * @var \Illuminate\Contracts\Auth\Factory
      */
-    protected $auth;
+    protected $_auth;
 
     /**
      * Create a new middleware instance.
      *
-     * @param  \Illuminate\Contracts\Auth\Factory  $auth
+     * @param  \Illuminate\Contracts\Auth\Factory  $_auth
      * @return void
      */
-    public function __construct(Auth $auth)
+    public function __construct(Auth $_auth)
     {
-        $this->auth = $auth;
+        $this->auth = $_auth;
     }
 
     /**
