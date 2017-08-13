@@ -99,10 +99,7 @@ $app->middleware([
 |
 */
 
-// $app->register(App\Providers\AppServiceProvider::class);
-// $app->register(App\Providers\AuthServiceProvider::class);
-// $app->register(App\Providers\GuardServiceProvider::class);
-// $app->register(App\Providers\EventServiceProvider::class);
+$app->register(Laravel\Socialite\SocialiteServiceProvider::class);
 
 // Dingo Adapter for Lumen
 $app->register(Zeek\LumenDingoAdapter\Providers\LumenDingoAdapterServiceProvider::class);

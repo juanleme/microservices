@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Http\Models;
 
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Authenticatable;

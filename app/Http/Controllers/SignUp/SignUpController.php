@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\SignUp;
 
-use App\User;
+use App\Http\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -59,7 +59,7 @@ class SignUpController extends Controller {
     /**
     * Generate a unique username.
     *
-    * @param \App\User $pUser
+    * @param \App\Http\Models $pUser
     *
     * @return String username
     */
