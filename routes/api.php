@@ -14,9 +14,14 @@
 $api = $app->make(Dingo\Api\Routing\Router::class);
 
 $api->version('v1', function ($api) {
-    $api->post('/auth/login', [
-        'as' => 'api.auth.login',
+    $api->post('/login', [
+        'as' => 'api.login',
         'uses' => 'App\Http\Controllers\Auth\AuthController@postLogin',
+    ]);
+
+    $api->post('/signUp', [
+        'as' => 'api.signUp',
+        'uses' => 'App\Http\Controllers\SignUp\SignUpController@signUp',
     ]);
 
     $api->group([
