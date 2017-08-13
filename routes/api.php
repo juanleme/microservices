@@ -19,6 +19,16 @@ $api->version('v1', function ($api) {
         'uses' => 'App\Http\Controllers\Auth\AuthController@postLogin',
     ]);
 
+    $api->get('/signUp/{provider}', [
+        'as' => 'api.signUp.provider',
+        'uses' => 'App\Http\Controllers\AuthProviders\AuthProvidersController@getProviderRedirectUrl',
+    ]);
+
+    $api->get('/signUp/{provider}/callback', [
+        'as' => 'api.signUp.provider',
+        'uses' => 'App\Http\Controllers\AuthProviders\AuthProvidersController@handleCallbackProvider',
+    ]);
+
     $api->post('/signUp', [
         'as' => 'api.signUp',
         'uses' => 'App\Http\Controllers\SignUp\SignUpController@signUp',

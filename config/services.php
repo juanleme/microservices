@@ -14,9 +14,28 @@ return [
     */
 
     'facebook' => [
-        'client_id'     => '1132274563541366',
-        'client_secret' => '5ac41b88622c5513237b70ce40506ce0',
-        'redirect'      => 'http://ctwt.com.br',
-    ]
+        'client_id'     =>  env('FACEBOOK_ID'),
+        'client_secret' =>  env('FACEBOOK_SECRET'),
+        'redirect'      =>  env('FACEBOOK_REDIRECT')
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Facebook Connection
+    |--------------------------------------------------------------------------
+    |
+    | Connects facebook using the following parameters.
+    |
+    | For example:
+    | https://developers.google.com/identity/sign-in/web/devconsole-project
+    |
+    */
+
+    'google' => [
+        'client_id'     =>  env('GOOGLE_ID'),
+        'client_secret' =>  env('GOOGLE_SECRET'),
+        'redirect'      =>  env('GOOGLE_REDIRECT')
+    ],
+
 
 ];

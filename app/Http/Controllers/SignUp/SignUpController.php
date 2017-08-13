@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\SignUp;
 
 use App\Http\Models\User;
+use App\Http\Services\UsernameService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -10,8 +11,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Exception\HttpResponseException;
+use Laravel\Socialite\Facades\Socialite;
 
 class SignUpController extends Controller {
+
 
     /**
     * Handle a register request to the application.
@@ -20,10 +23,9 @@ class SignUpController extends Controller {
     *
     * @return \Illuminate\Http\Response
     */
-
     public function signUp(Request $pRequest) {
         try {
-            $result = $this->validate($pRequest, [
+            $this->validate($pRequest, [
                 'email' => 'required|email|unique:users|max:255|min:6',
                 'password' => 'required',
             ]);
@@ -43,7 +45,7 @@ class SignUpController extends Controller {
             $pUser->remember_token = str_random(10);
 
             //  Generate username
-            $pUser->username = $this->_generateUsername($pUser);
+            $pUser->username = UsernameService::generateUsername($pUser);
 
             $pUser->save();
 
@@ -56,25 +58,4 @@ class SignUpController extends Controller {
         }
     }
 
-    /**
-    * Generate a unique username.
-    *
-    * @param \App\Http\Models $pUser
-    *
-    * @return String username
-    */
-    protected function _generateUsername(User $pUser) {
-        $strUsername = strtolower(
-            str_replace(' ', '',
-            $pUser->firstname . $pUser->lastname)
-        );
-
-        $nUserRows = User::where(
-            'username', 'regexp', $strUsername.'.*?[0-9]*')
-            ->count();
-        if($nUserRows > 0) {
-            return $strUsername . ($nUserRows + 1);
-        }
-        return $strUsername;
-    }
 }

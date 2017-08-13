@@ -122,4 +122,6 @@ $app->group(['namespace' => 'App\Http\Controllers'], function ($app) {
     require __DIR__.'/../routes/api.php';
 });
 
+$app->configure('services');
+
 return $app;
