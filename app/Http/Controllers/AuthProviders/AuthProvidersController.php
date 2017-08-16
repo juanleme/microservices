@@ -38,15 +38,10 @@ class AuthProvidersController extends Controller {
 
     public function getProviderRedirectUrl($strProvider) {
         if(!in_array($strProvider, $this->_vecProviders)) {
-            return new JsonResponse([
-                'message' => 'provider_not_allowed'
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->_onProviderNotAllowed();
         }
 
-        return Socialite::with('facebook')
-                ->stateless()
-                ->redirect()
-                ->getTargetUrl();
+        return Socialite::with($strProvider)->stateless()->redirect();
     }
 
     /**
@@ -56,10 +51,22 @@ class AuthProvidersController extends Controller {
     *
     * @return \Illuminate\Http\Response
     */
-
     public function handleCallbackProvider($strProvider) {
-        $pUser = Socialite::driver($strProvider)->user();
+        $pUser = Socialite::driver($strProvider)->stateless()->user();
 
         print_r($pUser);
     }
+
+    /**
+    * What response should be returned when provider is not allowed.
+    *
+    * @return JsonResponse
+    */
+    protected function _onProviderNotAllowed() {
+        return new JsonResponse([
+            'message' => 'provider_not_allowed'
+        ], Response::HTTP_UNPROCESSABLE_ENTITY);
+
+    }
+
 }

@@ -25,7 +25,7 @@ $api->version('v1', function ($api) {
     ]);
 
     $api->get('/signUp/{provider}/callback', [
-        'as' => 'api.signUp.provider',
+        'as' => 'api.signUp.provider.callback',
         'uses' => 'App\Http\Controllers\AuthProviders\AuthProvidersController@handleCallbackProvider',
     ]);
 

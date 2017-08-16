@@ -99,6 +99,7 @@ $app->middleware([
 |
 */
 
+$app->register(App\Providers\AppServiceProvider::class);
 $app->register(Laravel\Socialite\SocialiteServiceProvider::class);
 
 // Dingo Adapter for Lumen

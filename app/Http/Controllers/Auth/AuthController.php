@@ -20,8 +20,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function postLogin(Request $request)
-    {
+    public function postLogin(Request $request) {
         try {
             $this->validate($request, [
                 'email' => 'required|email|max:255',
@@ -52,8 +51,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function deleteInvalidate()
-    {
+    public function deleteInvalidate() {
         $token = JWTAuth::parseToken();
 
         $token->invalidate();
@@ -66,8 +64,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function patchRefresh()
-    {
+    public function patchRefresh() {
         $token = JWTAuth::parseToken();
 
         $newToken = $token->refresh();
@@ -85,8 +82,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getUser()
-    {
+    public function getUser() {
         return new JsonResponse([
                 'message' => 'authenticated_user',
                 'data' => JWTAuth::parseToken()->authenticate()
@@ -94,12 +90,26 @@ class AuthController extends Controller
     }
 
     /**
+     * What response should be returned on authorized.
+     *
+     * @return JsonResponse
+     */
+    protected function _onAuthorized($token) {
+        return new JsonResponse([
+            'message' => 'token_generated',
+            'data' => [
+                'token' => $token,
+            ]
+        ]);
+    }
+
+
+    /**
      * What response should be returned on invalid credentials.
      *
      * @return JsonResponse
      */
-    protected function _onUnauthorized()
-    {
+    protected function _onUnauthorized() {
         return new JsonResponse([
             'message' => 'invalid_credentials'
         ], Response::HTTP_UNAUTHORIZED);
@@ -110,26 +120,10 @@ class AuthController extends Controller
      *
      * @return JsonResponse
      */
-    protected function _onJwtGenerationError()
-    {
+    protected function _onJwtGenerationError() {
         return new JsonResponse([
             'message' => 'could_not_create_token'
         ], Response::HTTP_INTERNAL_SERVER_ERROR);
-    }
-
-    /**
-     * What response should be returned on authorized.
-     *
-     * @return JsonResponse
-     */
-    protected function _onAuthorized($token)
-    {
-        return new JsonResponse([
-            'message' => 'token_generated',
-            'data' => [
-                'token' => $token,
-            ]
-        ]);
     }
 
     /**
@@ -139,8 +133,7 @@ class AuthController extends Controller
      *
      * @return array
      */
-    protected function _getCredentials(Request $request)
-    {
+    protected function _getCredentials(Request $request) {
         return $request->only('email', 'password');
     }
 }

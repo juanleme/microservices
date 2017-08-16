@@ -49,13 +49,32 @@ class SignUpController extends Controller {
 
             $pUser->save();
 
-            return new JsonResponse(['message' => 'user_registered']);
-
+            return $this->_onRegister();
         } catch (HttpException $pException) {
-
-            throw new HttpException(422, 'could_not_register_user');
-
+            return $this->_onCannotRegister();
         }
+    }
+
+    /**
+    * What response should be returned when cannot register an user.
+    *
+    * @return JsonResponse
+    */
+    protected function _onCannotRegister() {
+        return new JsonResponse([
+            'message' => 'user_could_not_be_registered'
+        ], Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+    /**
+    * What response should be returned when cannot register an user.
+    *
+    * @return JsonResponse
+    */
+    protected function _onRegister() {
+        return new JsonResponse([
+                'message' => 'user_registered',
+            ]);
     }
 
 }
