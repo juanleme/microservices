@@ -34,14 +34,7 @@ class SignUpController extends Controller {
         }
         try{
             //  Register a new user on the database
-            $pUser = new User();
-
-            // Request params
-            $pUser->firstname = $pRequest->get('firstname');
-            $pUser->lastname = $pRequest->get('lastname');
-            $pUser->email = $pRequest->get('email');
-            $pUser->password = $pRequest->get('password');
-
+            $pUser = new User($pRequest->all());
             $pUser->remember_token = str_random(10);
 
             //  Generate username

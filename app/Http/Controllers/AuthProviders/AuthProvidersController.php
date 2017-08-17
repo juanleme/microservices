@@ -41,7 +41,9 @@ class AuthProvidersController extends Controller {
             return $this->_onProviderNotAllowed();
         }
 
-        return Socialite::with($strProvider)->stateless()->redirect();
+        // GET Url
+        return Socialite::with($strProvider)
+                ->stateless()->redirect()->getTargetUrl();
     }
 
     /**
@@ -53,8 +55,6 @@ class AuthProvidersController extends Controller {
     */
     public function handleCallbackProvider($strProvider) {
         $pUser = Socialite::driver($strProvider)->stateless()->user();
-
-        print_r($pUser);
     }
 
     /**
