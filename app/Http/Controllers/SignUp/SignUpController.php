@@ -32,27 +32,19 @@ class SignUpController extends Controller {
         } catch (ValidationException $pException) {
             return $pException->getResponse();
         }
-        try{
-            //  Register a new user on the database
-            $pUser = new User();
+        //  Register a new user on the database
+        $pUser = new User($pRequest->all());
+        $pUser->password = $pRequest->get('password');
+        $pUser->remember_token = str_random(10);
 
-            // Request params
-            $pUser->firstname = $pRequest->get('firstname');
-            $pUser->lastname = $pRequest->get('lastname');
-            $pUser->email = $pRequest->get('email');
-            $pUser->password = $pRequest->get('password');
+        //  Generate username
+        $pUser->username = UsernameService::generateUsername($pUser);
 
-            $pUser->remember_token = str_random(10);
-
-            //  Generate username
-            $pUser->username = UsernameService::generateUsername($pUser);
-
-            $pUser->save();
-
-            return $this->_onRegister();
-        } catch (HttpException $pException) {
+        if(!$pUser->save()){
             return $this->_onCannotRegister();
         }
+        
+        return $this->_onRegister();
     }
 
     /**

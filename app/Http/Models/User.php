@@ -25,6 +25,9 @@ class User extends Model implements
         'lastname',
         'username',
         'email',
+        'gender',
+        'avatar',
+        'provider'
     ];
 
     /**
@@ -35,6 +38,7 @@ class User extends Model implements
     protected $hidden = [
         'password',
         'remember_token',
+        'provider_id'
     ];
 
     /**
@@ -67,5 +71,5 @@ class User extends Model implements
     {
         $this->attributes['password'] = Hash::make($value);
     }
-
+    
 }

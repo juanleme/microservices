@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Models\User;
+use App\Http\Services\UsernameService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
@@ -10,51 +12,86 @@ use App\Http\Controllers\Controller;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Exception\HttpResponseException;
+use Laravel\Socialite\Facades\Socialite;
+use Validator;
 
-class AuthController extends Controller
-{
+class AuthController extends Controller {
+    
+    protected $_vecProviders;
+
     /**
-     * Handle a login request to the application.
-     *
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function postLogin(Request $request) {
+    * Constructor gets env enabled providers.
+    *
+    * Available providers: @google | @facebook
+    *
+    */
+    public function __construct() {
+        $this->_vecProviders = explode(',', env('PROVIDERS'));
+    }
+
+    /**
+    * Handle a login request to the application.
+    *
+    * @param \Illuminate\Http\Request $pRequest
+    *
+    * @return \Illuminate\Http\Response
+    */
+    public function postLogin(Request $pRequest) {
         try {
-            $this->validate($request, [
+            $this->validate($pRequest, [
                 'email' => 'required|email|max:255',
                 'password' => 'required',
             ]);
-        } catch (ValidationException $e) {
-            return $e->getResponse();
+        } catch (ValidationException $pException) {
+            return $pException->getResponse();
         }
 
         try {
             // Attempt to verify the credentials and create a token for the user
-            if (!$token = JWTAuth::attempt(
-                $this->_getCredentials($request)
+            if (!$strToken = JWTAuth::attempt(
+                $this->_getCredentials($pRequest)
             )) {
                 return $this->_onUnauthorized();
             }
-        } catch (JWTException $e) {
+        } catch (JWTException $pException) {
             // Something went wrong whilst attempting to encode the token
             return $this->_onJwtGenerationError();
         }
 
         // All good so return the token
-        return $this->_onAuthorized($token);
+        return $this->_onAuthorized($strToken);
     }
-
+    
     /**
-     * Invalidate a token.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    * Get the needed authorization credentials from the request.
+    *
+    * @param \Illuminate\Http\Request $pRequest
+    *
+    * @return array
+    */
+    protected function _getCredentials(Request $pRequest) {
+        return $pRequest->only('email', 'password');
+    }
+    
+    /**
+    * What response should be returned on invalid credentials.
+    *
+    * @return JsonResponse
+    */
+    protected function _onUnauthorized() {
+        return new JsonResponse([
+            'message' => 'invalid_credentials'
+        ], Response::HTTP_UNAUTHORIZED);
+    }
+    /**
+    * Invalidate a token.
+    *
+    * @return \Illuminate\Http\Response
+    */
     public function deleteInvalidate() {
-        $token = JWTAuth::parseToken();
+        $strToken = JWTAuth::parseToken();
 
-        $token->invalidate();
+        $strToken->invalidate();
 
         return new JsonResponse(['message' => 'token_invalidated']);
     }
@@ -65,9 +102,9 @@ class AuthController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function patchRefresh() {
-        $token = JWTAuth::parseToken();
+        $strToken = JWTAuth::parseToken();
 
-        $newToken = $token->refresh();
+        $newToken = $strToken->refresh();
 
         return new JsonResponse([
                 'message' => 'token_refreshed',
@@ -78,10 +115,148 @@ class AuthController extends Controller
     }
 
     /**
-     * Get authenticated user.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    * Get REDIRECTION URL to a thrid part OAtuh provider
+    *
+    *
+    * @param String $strProvider
+    *
+    * @return \Illuminate\Http\Response
+    */
+    public function getProviderRedirectUrl($strProvider) {
+        if(!in_array($strProvider, $this->_vecProviders)) {
+            return $this->_onProviderNotAllowed();
+        }
+
+        // GET Url
+        return Socialite::with($strProvider)
+                ->stateless()->redirect()->getTargetUrl();
+    }
+
+    /**
+    * Handle with the providers callback
+    *
+    * @param String $strProvider
+    *
+    * @return \Illuminate\Http\Response
+    */
+    public function handleCallbackProvider($strProvider) {
+        $pProviderUser = Socialite::driver($strProvider)->stateless()->user();
+        
+        // Find user or create a new one using the Provider data 
+        $vecProviderUser = $this->_findOrCreateUser($pProviderUser, $strProvider);
+        
+        if($vecProviderUser['status'] == 'error') {
+            return $this->_onLocalErrorMessage($vecProviderUser['message']);
+        }
+        
+        $pUser = $vecProviderUser['user'];
+    
+        try{
+            if (!$strToken = JWTAuth::fromUser($pUser)) {
+                return $this->_onUnauthorized();
+            }
+        } catch (JWTException $pException) {
+            // Something went wrong whilst attempting to encode the token
+            return $this->_onJwtGenerationError();
+        }
+
+        // All good so return the token
+        return $this->_onAuthorized($strToken);
+
+    }
+    
+    /**
+    * If a user has registered before using social auth, return the user
+    * else, create a new user object.
+    *
+    * @param $pProviderUser Socialite user object
+    * @param $strProvider Social auth provider
+    *
+    * @return  User
+    */
+    protected function _findOrCreateUser($pProviderUser, $strProvider) {
+        $pAuthUser = User::where('provider_id', $pProviderUser->id)->first();
+                                    
+        if ($pAuthUser) {
+            // User changes the email on provider? We must change it as well
+            if ($pAuthUser->email != $pProviderUser->email) {
+                $pAuthUser->email = $pProviderUser->email;
+                $pAuthUser->save();
+            }
+            return [
+                'status' => 'success',
+                'user' => $pAuthUser
+            ];
+        }
+        
+        $pValidator = Validator::make([
+                'email' => $pProviderUser->email,
+                'provider_id' => $pProviderUser->id
+            ], [
+                'email' => 'required|email|unique:users|max:255',
+                'provider_id' => 'required',
+            ]);
+        
+        if($pValidator->fails()) {
+            return [
+                'status' => 'error',
+                'message' => $pValidator->messages()->first()
+            ];
+        }
+            
+        $pUser = new User([
+            'name'      => $pProviderUser->name,
+            'email'     => $pProviderUser->email,
+            'provider'  => $strProvider,
+            'avatar'    => $pProviderUser->avatar,
+            'gender'    => $pProviderUser->user['gender']
+        ]);
+        
+        $pUser->remember_token = str_random(10);
+        $pUser->provider_id = $pProviderUser->id;
+        $pUser->username = UsernameService::generateUsername($pUser);
+
+        if(!$pUser->save()) {
+            return [
+                'status' => 'error',
+                'message' => 'user_provider_could_not_be_registered'
+            ];
+        }
+        
+        return [
+            'status' => 'success',
+            'user' => $pUser
+        ];
+    }
+    
+    /**
+    * Could not register a new user.
+    *
+    * @return \Illuminate\Http\Response
+    */
+    protected function _onCannotRegister() {
+        return new JsonResponse([
+            'message' => 'user_provider_could_not_be_registered'
+        ], Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+    
+    
+    /**
+    * Get authenticated user.
+    *
+    * @return \Illuminate\Http\Response
+    */
+    protected function _onLocalErrorMessage($message) {
+        return new JsonResponse([
+            'message' => $message
+        ], Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+    /**
+    * Get authenticated user.
+    *
+    * @return \Illuminate\Http\Response
+    */
     public function getUser() {
         return new JsonResponse([
                 'message' => 'authenticated_user',
@@ -90,50 +265,42 @@ class AuthController extends Controller
     }
 
     /**
-     * What response should be returned on authorized.
-     *
-     * @return JsonResponse
-     */
-    protected function _onAuthorized($token) {
+    * What response should be returned on authorized.
+    *
+    * @return JsonResponse
+    */
+    protected function _onAuthorized($strToken) {
         return new JsonResponse([
             'message' => 'token_generated',
             'data' => [
-                'token' => $token,
+                'token' => $strToken,
             ]
         ]);
     }
 
 
     /**
-     * What response should be returned on invalid credentials.
-     *
-     * @return JsonResponse
-     */
-    protected function _onUnauthorized() {
-        return new JsonResponse([
-            'message' => 'invalid_credentials'
-        ], Response::HTTP_UNAUTHORIZED);
-    }
-
-    /**
-     * What response should be returned on error while generate JWT.
-     *
-     * @return JsonResponse
-     */
+    * What response should be returned on error while generate JWT.
+    *
+    * @return JsonResponse
+    */
     protected function _onJwtGenerationError() {
         return new JsonResponse([
             'message' => 'could_not_create_token'
         ], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
 
+    
     /**
-     * Get the needed authorization credentials from the request.
-     *
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return array
-     */
-    protected function _getCredentials(Request $request) {
-        return $request->only('email', 'password');
+    * What response should be returned when provider is not allowed.
+    *
+    * @return JsonResponse
+    */
+    protected function _onProviderNotAllowed() {
+        return new JsonResponse([
+            'message' => 'provider_not_allowed'
+        ], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
+
+
 }
