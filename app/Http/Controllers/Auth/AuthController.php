@@ -104,12 +104,12 @@ class AuthController extends Controller {
     public function patchRefresh() {
         $strToken = JWTAuth::parseToken();
 
-        $newToken = $strToken->refresh();
+        $strNewToken = $strToken->refresh();
 
         return new JsonResponse([
                 'message' => 'token_refreshed',
                 'data' => [
-                    'token' => $newToken
+                    'token' => $strNewToken
                 ]
             ]);
     }
@@ -242,13 +242,15 @@ class AuthController extends Controller {
     
     
     /**
-    * Get authenticated user.
+    * Local error Message.
+    *
+    * @param $strMessage
     *
     * @return \Illuminate\Http\Response
     */
-    protected function _onLocalErrorMessage($message) {
+    protected function _onLocalErrorMessage($strMessage) {
         return new JsonResponse([
-            'message' => $message
+            'message' => $strMessage
         ], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
