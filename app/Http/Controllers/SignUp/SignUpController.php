@@ -32,6 +32,7 @@ class SignUpController extends Controller {
         } catch (ValidationException $pException) {
             return $pException->getResponse();
         }
+<<<<<<< HEAD
         //  Register a new user on the database
         $pUser = new User($pRequest->all());
         $pUser->password = $pRequest->get('password');
@@ -41,6 +42,20 @@ class SignUpController extends Controller {
         $pUser->username = UsernameService::generateUsername($pUser);
 
         if(!$pUser->save()){
+=======
+        try{
+            //  Register a new user on the database
+            $pUser = new User($pRequest->all());
+            $pUser->remember_token = str_random(10);
+
+            //  Generate username
+            $pUser->username = UsernameService::generateUsername($pUser);
+
+            $pUser->save();
+
+            return $this->_onRegister();
+        } catch (HttpException $pException) {
+>>>>>>> b46847b5779e5cde20be068c153e813f4cd0f025
             return $this->_onCannotRegister();
         }
         
