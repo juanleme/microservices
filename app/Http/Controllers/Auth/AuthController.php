@@ -203,9 +203,19 @@ class AuthController extends Controller {
                 'message' => $pValidator->messages()->first()
             ];
         }
-            
+        $vecName = explode(' ', $pProviderUser->name);
+
+        if (count($vecName) > 1) {
+            $strFirstname = array_shift($vecName);
+            $strLastname = implode(' ', $vecName);
+        } else {
+            $strFirstname = $vecName[0];
+            $strLastname = '&';
+        }
+
         $pUser = new User([
-            'name'      => $pProviderUser->name,
+            'firstname' => $strFirstname,
+            'lastname'  => $strLastname,
             'email'     => $pProviderUser->email,
             'provider'  => $strProvider,
             'avatar'    => $pProviderUser->avatar,
